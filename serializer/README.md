@@ -21,8 +21,13 @@ type Bar struct{
 	Array [2]int
 }
 
+/*
+ * Serializer supports Slices, Maps and Arrays as serialization Format.
+ */
 var ser_Bar = serializer.With(new(Bar)).
-	Field("Slice")
+	Field("Slice").
+	Field("Map").
+	Field("Array")
 
 type Car struct{
 	SV [][]*Bar
