@@ -87,6 +87,19 @@ func (ce ceByte) Write(w *preciseio.PreciseWriter,v reflect.Value) error {
 	return w.W.WriteByte(byte(v.Uint()))
 }
 
+type ceSbyte struct{}
+func (ce ceSbyte) Read(r preciseio.PreciseReader,v reflect.Value) error {
+	b,e := r.R.ReadByte()
+	if e!=nil { return e }
+	i := int8(b)
+	v.SetInt(int64(i))
+	return nil
+}
+func (ce ceSbyte) Write(w *preciseio.PreciseWriter,v reflect.Value) error {
+	i := int8(v.Int())
+	return w.W.WriteByte(byte(i))
+}
+
 type ceSlice struct{
 	child CodecElement
 	t reflect.Type
@@ -191,5 +204,55 @@ func (ce ceArray) Write(w *preciseio.PreciseWriter,v reflect.Value) error {
 		if e!=nil { return e }
 	}
 	return nil
+}
+type cePtr struct{
+	child CodecElement
+	t reflect.Type
+}
+func (ce cePtr) Read(r preciseio.PreciseReader,v reflect.Value) error {
+	b,e := r.R.ReadByte()
+	if e!=nil { return e }
+	if b==0 {
+		v.Set(reflect.Zero(v.Type()))
+		return nil
+	}
+	pv := reflect.New(ce.t.Elem())
+	v.Set(pv)
+	return ce.child.Read(r,pv.Elem())
+}
+func (ce cePtr) Write(w *preciseio.PreciseWriter,v reflect.Value) error {
+	v = CastV(ce.t,v)
+	if v.IsNil() { return w.W.WriteByte(0) }
+	e := w.W.WriteByte(0xff)
+	if e!=nil { return e }
+	return ce.child.Write(w,v.Elem())
+}
+
+func StripawayPtr(i interface{}) CodecElement {
+	t := reflect.TypeOf(i)
+	ce := serializerFor(t.Elem())
+	if ce==nil { return nil }
+	return ceStripawayPtr{ce,t}
+}
+func StripawayPtrWith(i interface{}, ce CodecElement) CodecElement {
+	t := reflect.TypeOf(i)
+	if ce==nil { return nil }
+	return ceStripawayPtr{ce,t}
+}
+
+type ceStripawayPtr struct{
+	child CodecElement
+	t reflect.Type
+}
+func (ce ceStripawayPtr) Read(r preciseio.PreciseReader,v reflect.Value) error {
+	pv := reflect.New(ce.t.Elem())
+	v.Set(pv)
+	return ce.child.Read(r,pv.Elem())
+}
+func (ce ceStripawayPtr) Write(w *preciseio.PreciseWriter,v reflect.Value) error {
+	v = CastV(ce.t,v)
+	var ev reflect.Value
+	if v.IsNil() { ev = reflect.Zero(ce.t.Elem()) } else { ev = v.Elem() }
+	return ce.child.Write(w,ev)
 }
 
