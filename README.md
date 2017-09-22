@@ -14,3 +14,8 @@ A Version Vector for concurrency control. https://en.wikipedia.org/wiki/Version_
 Extended IO Routines to construct Serializers/Deserializers to directly operate on
 `*bufio.Reader` and `*bufio.Writer`.
 
+### Serializer
+
+A reflection-based deterministic serialization and deserialization framework build around PreciseIO.
+
+Further informations [here](serializer/).

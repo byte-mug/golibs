@@ -25,20 +25,24 @@ SOFTWARE.
 package serializer
 
 import "reflect"
+import "github.com/byte-mug/golibs/preciseio"
+import "sync"
 
-func Cast(t reflect.Type,i interface{}) (v reflect.Value) {
-	v = reflect.ValueOf(i)
-	if !v.IsValid() || v.Type()!=t { v = reflect.Zero(t) }
-	return
+var tpAny = reflect.TypeOf(new(interface{})).Elem()
+var pool_Values = sync.Pool{ New: func() interface{} { return reflect.New(tpAny).Elem() } }
+func pool_Values_Put(v reflect.Value) {
+	v.Set(reflect.Zero(tpAny))
+	pool_Values.Put(v)
 }
 
-func CastV(t reflect.Type,v reflect.Value) (reflect.Value) {
-	if !v.IsValid() { return reflect.Zero(t) }
-	if v.Type()!=t { v = reflect.ValueOf(v.Interface()) }
-	if !v.IsValid() || v.Type()!=t { v = reflect.Zero(t) }
-	return v
+func Deserialize(ce CodecElement, r preciseio.PreciseReader) (interface{},error) {
+	v := pool_Values.Get().(reflect.Value)
+	defer pool_Values_Put(v)
+	e := ce.Read(r,v)
+	return v.Interface(),e
 }
-func GetInterface(v reflect.Value) interface{} {
-	if !v.IsValid() { return nil }
-	return v.Interface()
+func Serialize(ce CodecElement, w *preciseio.PreciseWriter, i interface{}) error {
+	return ce.Write(w,reflect.ValueOf(i))
 }
+
+

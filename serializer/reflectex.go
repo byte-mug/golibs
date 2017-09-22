@@ -96,6 +96,7 @@ func (ce ceSlice) Read(r preciseio.PreciseReader,v reflect.Value) error {
 	return nil
 }
 func (ce ceSlice) Write(w *preciseio.PreciseWriter,v reflect.Value) error {
+	v = CastV(ce.t,v)
 	if v.IsNil() { return w.WriteListLength(0) }
 	n := v.Len()
 	e := w.WriteListLength(n)
@@ -107,4 +108,77 @@ func (ce ceSlice) Write(w *preciseio.PreciseWriter,v reflect.Value) error {
 	return nil
 }
 
+type ceMap struct{
+	k CodecElement
+	v CodecElement
+	t reflect.Type
+}
+func (ce ceMap) Read(r preciseio.PreciseReader,v reflect.Value) error {
+	b,e := r.R.ReadByte()
+	if e!=nil { return e }
+	if b==0 {
+		v.Set(reflect.Zero(v.Type()))
+		return nil
+	}
+	n,e := r.ReadListLength()
+	if e!=nil { return e }
+	nv := reflect.MakeMapWithSize(ce.t,n)
+	ckv := reflect.New(ce.t.Key()).Elem()
+	cvv := reflect.New(ce.t.Elem()).Elem()
+	for i:=0 ; i<n; i++ {
+		e = ce.k.Read(r,ckv)
+		if e!=nil { return e }
+		e = ce.v.Read(r,cvv)
+		if e!=nil { return e }
+		nv.SetMapIndex(ckv,cvv)
+	}
+	v.Set(nv)
+	return nil
+}
+func (ce ceMap) Write(w *preciseio.PreciseWriter,v reflect.Value) error {
+	v = CastV(ce.t,v)
+	if v.IsNil() { return w.W.WriteByte(0) }
+	e := w.W.WriteByte(0xff)
+	if e!=nil { return e }
+	keys := v.MapKeys()
+	n := len(keys)
+	e = w.WriteListLength(n)
+	if e!=nil { return e }
+	for _,key := range keys {
+		e = ce.k.Write(w,key)
+		if e!=nil { return e }
+		e = ce.v.Write(w,v.MapIndex(key))
+		if e!=nil { return e }
+	}
+	return nil
+}
+
+type ceArray struct{
+	child CodecElement
+	t reflect.Type
+}
+func (ce ceArray) Read(r preciseio.PreciseReader,v reflect.Value) error {
+	n := ce.t.Len()
+	nv := v
+	wrongtype := v.Type()!=ce.t // Type-mismatch
+	settable := v.CanSet() // Non-Settable
+	if wrongtype || !settable { nv = reflect.New(ce.t).Elem() } // Allocate in heap.
+	for i:=0; i<n; i++ {
+		e := ce.child.Read(r,nv.Index(i))
+		if e!=nil { return e }
+	}
+	if wrongtype || !settable {
+		v.Set(nv)
+	}
+	return nil
+}
+func (ce ceArray) Write(w *preciseio.PreciseWriter,v reflect.Value) error {
+	v = CastV(ce.t,v)
+	n := ce.t.Len()
+	for i:=0; i<n; i++ {
+		e := ce.child.Write(w,v.Index(i))
+		if e!=nil { return e }
+	}
+	return nil
+}
 
