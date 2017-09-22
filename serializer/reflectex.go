@@ -76,6 +76,17 @@ func (ce ceUint) Write(w *preciseio.PreciseWriter,v reflect.Value) error {
 	return w.WriteUvarint(v.Uint())
 }
 
+type ceByte struct{}
+func (ce ceByte) Read(r preciseio.PreciseReader,v reflect.Value) error {
+	b,e := r.R.ReadByte()
+	if e!=nil { return e }
+	v.SetUint(uint64(b))
+	return nil
+}
+func (ce ceByte) Write(w *preciseio.PreciseWriter,v reflect.Value) error {
+	return w.W.WriteByte(byte(v.Uint()))
+}
+
 type ceSlice struct{
 	child CodecElement
 	t reflect.Type

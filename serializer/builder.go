@@ -49,8 +49,10 @@ func serializerFor(t reflect.Type) CodecElement {
 		return ceString{}
 	case reflect.Int,reflect.Int8,reflect.Int16,reflect.Int32,reflect.Int64:
 		return ceInt{}
-	case reflect.Uint,reflect.Uint8,reflect.Uint16,reflect.Uint32,reflect.Uint64:
+	case reflect.Uint,reflect.Uint16,reflect.Uint32,reflect.Uint64:
 		return ceUint{}
+	case reflect.Uint8: // 8-bit unsigned integer = special case
+		return ceByte{}
 	case reflect.Map:
 		mk := t.Key()
 		me := t.Elem()
