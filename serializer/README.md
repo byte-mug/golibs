@@ -52,7 +52,7 @@ func serialize(bwr *bufio.Writer, value interface{}) error {
 	
 	return serializer.Serialize(ser_Swtc,w,value)
 }
-func deserialize(br *bufio.Reader, value interface{}) {
+func deserialize(br *bufio.Reader) {
 	r := preciseio.PreciseReader{br}
 	
 	fmt.Println(serializer.Deserialize(ser_Swtc,r))
