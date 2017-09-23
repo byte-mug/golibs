@@ -260,12 +260,12 @@ func AddPtr(i interface{}) CodecElement {
 	t := reflect.TypeOf(i)
 	ce := serializerFor(t.Elem())
 	if ce==nil { return nil }
-	return ceStripawayPtr{ce,t}
+	return ceAddPtr{ce,t}
 }
 func AddPtrWith(i interface{}, ce CodecElement) CodecElement {
 	t := reflect.TypeOf(i)
 	if ce==nil { return nil }
-	return ceStripawayPtr{ce,t}
+	return ceAddPtr{ce,t}
 }
 
 type ceAddPtr struct{
