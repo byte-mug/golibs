@@ -275,7 +275,7 @@ type ceAddPtr struct{
 func (ce ceAddPtr) Read(r preciseio.PreciseReader,v reflect.Value) error {
 	ptr := reflect.New(ce.t).Elem()
 	err := ce.child.Read(r,ptr)
-	if !cell.IsNil() { v.Set(ptr.Elem()) }
+	if !ptr.IsNil() { v.Set(ptr.Elem()) }
 	return err
 }
 func (ce ceAddPtr) Write(w *preciseio.PreciseWriter,v reflect.Value) error {
