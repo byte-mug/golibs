@@ -256,3 +256,31 @@ func (ce ceStripawayPtr) Write(w *preciseio.PreciseWriter,v reflect.Value) error
 	return ce.child.Write(w,ev)
 }
 
+func AddPtr(i interface{}) CodecElement {
+	t := reflect.TypeOf(i)
+	ce := serializerFor(t.Elem())
+	if ce==nil { return nil }
+	return ceStripawayPtr{ce,t}
+}
+func AddPtrWith(i interface{}, ce CodecElement) CodecElement {
+	t := reflect.TypeOf(i)
+	if ce==nil { return nil }
+	return ceStripawayPtr{ce,t}
+}
+
+type ceAddPtr struct{
+	child CodecElement
+	t reflect.Type
+}
+func (ce ceAddPtr) Read(r preciseio.PreciseReader,v reflect.Value) error {
+	ptr := reflect.New(ce.t).Elem()
+	err := ce.child.Read(r,ptr)
+	if !cell.IsNil() { v.Set(ptr.Elem()) }
+	return err
+}
+func (ce ceAddPtr) Write(w *preciseio.PreciseWriter,v reflect.Value) error {
+	ptr := reflect.New(ce.t.Elem())
+	ptr.Elem().Set(CastV(ce.t.Elem(),v))
+	return ce.child.Write(w,ptr)
+}
+
