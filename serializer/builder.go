@@ -136,11 +136,17 @@ type strctField struct{
 type StructBuilder struct{
 	t reflect.Type
 	fields []strctField
+	noptr bool
 }
 func With(i interface{}) *StructBuilder {
 	ti := reflect.TypeOf(i)
 	if ti.Kind()!=reflect.Ptr || ti.Elem().Kind()!=reflect.Struct { panic(fmt.Sprintf("Required *struct{}, but got %v",ti)) }
-	return &StructBuilder{ti,nil}
+	return &StructBuilder{ti,nil,false}
+}
+func WithInline(i interface{}) *StructBuilder {
+	ti := reflect.TypeOf(i)
+	if ti.Kind()!=reflect.Ptr || ti.Elem().Kind()!=reflect.Struct { panic(fmt.Sprintf("Required *struct{}, but got %v",ti)) }
+	return &StructBuilder{ti,nil,true}
 }
 func (s *StructBuilder) Field(name string) *StructBuilder{
 	f,ok := s.t.Elem().FieldByName(name)
@@ -175,6 +181,12 @@ func (s *StructBuilder) FieldContainerWith(name string,ce CodecElement) *StructB
 	return s
 }
 func (s *StructBuilder) Read(r preciseio.PreciseReader,v reflect.Value) error {
+	if s.noptr {
+		return s.directRead(r,v)
+	}
+	return s.ptrRead(r,v)
+}
+func (s *StructBuilder) ptrRead(r preciseio.PreciseReader,v reflect.Value) error {
 	b,e := r.R.ReadByte()
 	if e!=nil { return e }
 	if b==0 {
@@ -190,7 +202,26 @@ func (s *StructBuilder) Read(r preciseio.PreciseReader,v reflect.Value) error {
 	}
 	return nil
 }
+func (s *StructBuilder) directRead(r preciseio.PreciseReader,v reflect.Value) error {
+	pv := v
+	if pv.Type()!=s.t.Elem() {
+		pv = reflect.New(s.t.Elem()).Elem()
+		v.Set(pv)
+	}
+	for _,field := range s.fields {
+		e := field.ce.Read(r,pv.FieldByIndex(field.idxs))
+		if e!=nil { return e }
+	}
+	return nil
+}
+
 func (s *StructBuilder) Write(w *preciseio.PreciseWriter,v reflect.Value) error {
+	if s.noptr {
+		return s.directWrite(w,v)
+	}
+	return s.ptrWrite(w,v)
+}
+func (s *StructBuilder) ptrWrite(w *preciseio.PreciseWriter,v reflect.Value) error {
 	v = CastV(s.t,v)
 	if v.IsNil() {
 		return w.W.WriteByte(0)
@@ -200,6 +231,14 @@ func (s *StructBuilder) Write(w *preciseio.PreciseWriter,v reflect.Value) error 
 	if e!=nil { return e }
 	for _,field := range s.fields {
 		e = field.ce.Write(w,ev.FieldByIndex(field.idxs))
+		if e!=nil { return e }
+	}
+	return nil
+}
+func (s *StructBuilder) directWrite(w *preciseio.PreciseWriter,v reflect.Value) error {
+	v = CastV(s.t.Elem(),v)
+	for _,field := range s.fields {
+		e := field.ce.Write(w,v.FieldByIndex(field.idxs))
 		if e!=nil { return e }
 	}
 	return nil

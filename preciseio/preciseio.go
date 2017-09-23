@@ -29,6 +29,7 @@ package preciseio
 import "io"
 import "encoding/binary"
 import "errors"
+import "sync"
 
 var EListTooLong = errors.New("List too long")
 var EBlobTooLong = errors.New("Blob too long")
@@ -47,6 +48,22 @@ type Writer interface{
 
 //--------------------------------------------------------
 
+var pool_PreciseWriter = sync.Pool{ New: func() interface{} {
+	s := new(PreciseWriter)
+	s.Initialize()
+	return s
+}}
+// Puts the PrecideWriter to the Pool, so it can be reallocated by PreciseWriterFromPool().
+func (w *PreciseWriter) PutToPool() {
+	w.W = nil
+	if len(w.buf)!=16 { return }
+	pool_PreciseWriter.Put(w)
+}
+
+// Gets an initialized PreciseWriter from the Pool.
+func PreciseWriterFromPool() *PreciseWriter {
+	return pool_PreciseWriter.Get().(*PreciseWriter)
+}
 
 type PreciseWriter struct{
 	W Writer
