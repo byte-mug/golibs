@@ -19,3 +19,9 @@ Extended IO Routines to construct Serializers/Deserializers to directly operate 
 A reflection-based deterministic serialization and deserialization framework build around PreciseIO.
 
 Further informations [here](serializer/).
+
+### QuickDump
+
+Another reflection-based (less) deterministic serialization and deserialization framework build around PreciseIO.
+
+Easier to use than Serializer.

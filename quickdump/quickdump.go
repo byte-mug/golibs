@@ -26,16 +26,11 @@ package quickdump
 
 import "github.com/byte-mug/golibs/preciseio"
 import "reflect"
-import "strings"
 import "fmt"
+import "math"
 
 const ourTag = "quickdump"
 
-func decodeTag(sf reflect.StructField) []string {
-	s := sf.Tag.Get(ourTag)
-	if s=="" { return nil }
-	return strings.Split(s,",")
-}
 func decodeTag2(sf reflect.StructField) (string,string) {
 	s := sf.Tag.Get(ourTag)
 	for i,b := range []byte(s) {
@@ -57,7 +52,26 @@ func getString(s []string, i int) string {
 func isNULL(v reflect.Value) bool {
 	return v.Kind()==reflect.Ptr && v.IsNil()
 }
-func alibi(i ...interface{}) {}
+
+func nullableIsNULL(v reflect.Value) bool {
+	switch v.Kind() {
+	case reflect.Ptr: return v.IsNil()
+	case reflect.Struct: return !v.Field(0).Bool()
+	}
+	return false
+}
+
+//func alibi(i ...interface{}) {}
+
+func stripNullable(isR, isW bool, v reflect.Value) reflect.Value {
+	switch v.Kind() {
+	case reflect.Ptr: return elem(isR,isW,v)
+	case reflect.Struct:
+		v.Field(0).SetBool(true)
+		return v.Field(1)
+	}
+	panic(fmt.Sprint("This type is not nullable: ",v.Type()," of kind ",v.Kind()))
+}
 
 func elem(isR, isW bool, v reflect.Value) reflect.Value {
 	if isR {
@@ -82,10 +96,10 @@ func length(t reflect.Type,i,n int) (l int) {
 	}
 	return
 }
-func findNonNill(v reflect.Value,i,n int) (l int) {
+func findNonNULL(v reflect.Value,i,n int) (l int) {
 	l = 0
 	for ; i<n ; i++ {
-		if !v.Field(i).IsNil() { return }
+		if !nullableIsNULL(v.Field(i)) { return }
 		l++
 	}
 	l = -1
@@ -107,6 +121,9 @@ func vperformStruct(isR, isW bool, r preciseio.PreciseReader, w *preciseio.Preci
 		case "tag":
 			incr = length(t,i,n)
 			tag,more = iterateString(more)
+		
+		case "more": // Blind tags
+			tag,more = iterateString(more)
 		}
 		
 		idx := 0
@@ -116,27 +133,48 @@ func vperformStruct(isR, isW bool, r preciseio.PreciseReader, w *preciseio.Preci
 				if err!=nil { return }
 			}
 			if isW {
-				idx = findNonNill(v,i,i+incr)
+				idx = findNonNULL(v,i,i+incr)
 				if idx<0 { idx=incr }
 				err = w.WriteListLength(idx)
 				if err!=nil { return }
 			}
 			if idx<incr {
 				fv = v.Field(i+idx)
-			}else{
+				tag,more = decodeTag2(t.Field(i+idx))
+				tag,more = iterateString(more) // strip first tag.
+			} else {
 				continue
 			}
 		}
 		
+		perform := true
 		for ;; tag,more = iterateString(more) {
 			switch tag {
 			case "strip":
-				fv = elem(isR,isW,fv)
+				fv = stripNullable(isR,isW,fv)
 				continue
+			case "nullable":
+				if isR {
+					b,e := r.R.ReadByte()
+					if e!=nil { return e }
+					perform = b!=0
+				}
+				if isW {
+					perform = !nullableIsNULL(fv)
+					b := byte(0)
+					if perform { b = 0xff }
+					err = w.W.WriteByte(b)
+					if err!=nil { return }
+				}
+				if perform {
+					fv = stripNullable(isR,isW,fv)
+					continue
+				}
 			}
 			break
 		}
 		
+		if !perform { continue }
 		e := vperform(isR,isW,r,w,fv)
 		//wasNULL = isNULL(fv)
 		
@@ -148,8 +186,11 @@ func vperformStruct(isR, isW bool, r preciseio.PreciseReader, w *preciseio.Preci
 func Marshal(w *preciseio.PreciseWriter,i interface{}) error {
 	return vperform(false,true,preciseio.PreciseReader{},w,reflect.ValueOf(i).Elem())
 }
+
 func Unmarshal(r preciseio.PreciseReader,i interface{}) error {
-	return vperform(true,false,r,nil,reflect.ValueOf(i).Elem())
+	v := reflect.ValueOf(i).Elem()
+	v.Set(reflect.Zero(v.Type()))
+	return vperform(true,false,r,nil,v)
 }
 
 func vperform(isR, isW bool, r preciseio.PreciseReader, w *preciseio.PreciseWriter, v reflect.Value) error {
@@ -189,7 +230,7 @@ func vperform(isR, isW bool, r preciseio.PreciseReader, w *preciseio.PreciseWrit
 			return w.W.WriteByte(byte(i))
 		}
 		return nil
-	case reflect.Uint,reflect.Uint16,reflect.Uint32,reflect.Uint64:
+	case reflect.Uint,reflect.Uint16,reflect.Uint32,reflect.Uint64,reflect.Uintptr:
 		if isR {
 			i,e := r.ReadUvarint()
 			v.SetUint(i)
@@ -209,6 +250,70 @@ func vperform(isR, isW bool, r preciseio.PreciseReader, w *preciseio.PreciseWrit
 		if isW {
 			i := v.Uint()
 			return w.W.WriteByte(byte(i))
+		}
+		return nil
+	case reflect.Complex64:
+		if isR {
+			rp,e := r.ReadUvarint()
+			if e!=nil { return e }
+			ip,e := r.ReadUvarint()
+			if e!=nil { return e }
+			rv := float64(math.Float32frombits(uint32(rp)))
+			iv := float64(math.Float32frombits(uint32(ip)))
+			v.SetComplex(complex(rv,iv))
+			return nil
+		}
+		if isW {
+			c := v.Complex()
+			rp := uint64(math.Float32bits(float32(real(c))))
+			ip := uint64(math.Float32bits(float32(imag(c))))
+			if e := w.WriteUvarint(rp) ; e!=nil { return e }
+			return w.WriteUvarint(ip)
+		}
+		return nil
+	case reflect.Complex128:
+		if isR {
+			rp,e := r.ReadUvarint()
+			if e!=nil { return e }
+			ip,e := r.ReadUvarint()
+			if e!=nil { return e }
+			rv := math.Float64frombits(rp)
+			iv := math.Float64frombits(ip)
+			v.SetComplex(complex(rv,iv))
+			return nil
+		}
+		if isW {
+			c := v.Complex()
+			rp := math.Float64bits(real(c))
+			ip := math.Float64bits(imag(c))
+			if e := w.WriteUvarint(rp) ; e!=nil { return e }
+			return w.WriteUvarint(ip)
+		}
+		return nil
+	case reflect.Float32:
+		if isR {
+			i,e := r.ReadUvarint()
+			if e!=nil { return e }
+			v.SetFloat(float64(math.Float32frombits(uint32(i))))
+			return nil
+		}
+		if isW {
+			f := v.Float()
+			i := uint64(math.Float32bits(float32(f)))
+			return w.WriteUvarint(i)
+		}
+		return nil
+	case reflect.Float64:
+		if isR {
+			i,e := r.ReadUvarint()
+			if e!=nil { return e }
+			v.SetFloat(math.Float64frombits(i))
+			return nil
+		}
+		if isW {
+			f := v.Float()
+			i := math.Float64bits(f)
+			return w.WriteUvarint(i)
 		}
 		return nil
 	case reflect.Slice:
