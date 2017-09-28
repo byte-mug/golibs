@@ -39,6 +39,7 @@ type ResourceElement struct{
 	refy bool
 	elem *list.Element
 	mutex sync.Mutex
+	wasted bool
 }
 func (r *ResourceElement) Incr() {
 	atomic.AddInt64(r.refc, 1)
@@ -81,6 +82,7 @@ func (r *ResourceList) Open(re *ResourceElement) error {
 	r.mutex.Lock(); defer r.mutex.Unlock()
 	err := re.open()
 	if err!=nil { return err }
+	if re.wasted { return nil }
 	if re.elem!=nil {
 		r.list.MoveToFront(re.elem)
 		return nil
@@ -95,6 +97,17 @@ func (r *ResourceList) Open(re *ResourceElement) error {
 		r.list.Remove(b)
 	}
 	return nil
+}
+
+// Permanently disables re
+func (r *ResourceList) Disable(re *ResourceElement) {
+	r.mutex.Lock(); defer r.mutex.Unlock()
+	re.wasted = true
+	if re.elem!=nil {
+		r.list.Remove(re.elem)
+		re.elem = nil
+		re.Decr()
+	}
 }
 func NewResourceList(max int) *ResourceList{
 	return &ResourceList{max: max, list: list.New() }
