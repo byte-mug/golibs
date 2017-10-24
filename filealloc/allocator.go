@@ -273,8 +273,9 @@ func (a *Allocator) appendPage(r uint) (*memPage,error) {
 	var empty [8]byte
 	beg := roundUp(a.eof)
 	lng := rank2Size(r)
-	_,e := a.f.WriteAt(empty[:],lng+beg)
+	_,e := a.f.WriteAt(empty[:],lng+beg-8)
 	if e!=nil { return nil,e }
+	a.eof = lng+beg
 	pg := new(memPage)
 	pg.f = a.f
 	pg.offset = beg
