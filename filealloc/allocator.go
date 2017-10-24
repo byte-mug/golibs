@@ -415,7 +415,6 @@ func (a *Allocator) allocAlgorithm2(i int,noGrow bool) (int64,error) {
 			return pg.offset+16,nil
 		}
 	}
-	fmt.Println("Growth")
 	if noGrow { return -1,nil } // No growth
 	pg,err = a.appendPage(r)
 	if err!=nil { return -1,err }
