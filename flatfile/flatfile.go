@@ -265,7 +265,7 @@ func (r *FlatFileReader) ReadEntry(recordID int) (*[]byte,[]byte,error) {
 	}
 	return bobj,(*bobj)[:recl],nil
 }
-func (r *FlatFileReader) ReadPosition(recordID int) (int64,int,error) {
+func (r *FlatFileReader) ReadPosition(recordID int) (recordOffset int64,recordLength int,ioError error) {
 	offset,err := r.lookup(recordID)
 	if err!=nil { return 0,0,err }
 	var buf [4]byte
@@ -287,14 +287,15 @@ func (f *FlatFileIterator) Init(src io.ReaderAt) {
 	f.recs = 0
 	f.off  = 0
 }
-func (f *FlatFileIterator) Next() (int64,int,error) {
+func (f *FlatFileIterator) Next() (recordID int,recordOffset int64,recordLength int,ioError error) {
 	var buf [4]byte
 	off := f.off
 	_,err := f.r.ReadAt(buf[:],off)
-	if err!=nil { return 0,0,err }
+	if err!=nil { return 0,0,0,err }
 	recl := bE.Uint32(buf[:])
-	if recl>MaxRawSize || recl<4 { return 0,0,EBadRecord }
+	if recl>MaxRawSize || recl<4 { return 0,0,0,EBadRecord }
 	f.off = off+int64(recl)
-	return off+4,int(recl-4),nil
+	f.recs++
+	return f.recs-1,off+4,int(recl-4),nil
 }
 
