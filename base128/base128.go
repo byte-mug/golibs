@@ -42,7 +42,7 @@ func NewWriter(w io.Writer) Writer {
 }
 
 func (w *writer) llwrite(c byte) error {
-	err := w.w.WriteByte(c)
+	err := w.w.WriteByte(c|0x80)
 	w.l++
 	if w.l > 80 {
 		w.w.WriteString("\r\n")
@@ -64,12 +64,12 @@ func (w *writer) Write(p []byte) (n int,e error) {
 		data = (data<<8)|uint64(b)
 		bits+=8
 		bits-=7
-		e = w.llwrite(byte(data>>bits)|0x80)
+		e = w.llwrite(byte(data>>bits))
 		if e!=nil { n = i ; break }
 		
 		if bits>= 7 {
 			bits-=7
-			e = w.llwrite(byte(data>>bits)|0x80)
+			e = w.llwrite(byte(data>>bits))
 			if e!=nil { n = i ; break }
 		}
 	}
