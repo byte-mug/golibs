@@ -23,61 +23,16 @@ SOFTWARE.
 
 package streamprotoc
 
-import "net/textproto"
-import "net"
-import "sync"
-import "bufio"
 import "time"
 
-type Server struct{
-	NewMessage func() *SendMessage
-	Handler    func(r *SendMessage,c *ServerConn)
-}
+var coarseNow time.Time
 
-type timeoutReader struct{
-	r net.Conn
-	e error
-}
-func (r *timeoutReader) Read(p []byte) (i int,e error) {
-	r.r.SetReadDeadline(coarseNow.Add(time.Second*5))
-	i,e = r.r.Read(p)
-	if r.e==nil && e!=nil { r.e = e }
-	return
-}
-
-type ServerConn struct{
-	nc net.Conn
-	br *timeoutReader
-	tr *textproto.Reader
-	tw *textproto.Writer
-	
-	wrl sync.Mutex
-	
-	*Server
-}
-func (c *ServerConn) worker(){
-	defer c.nc.Close()
-	for {
-		msg := c.NewMessage()
-		err := DecodeMessage(c.tr,msg)
-		if err==nil {
-			go c.Handler(msg,c)
+func init(){
+	coarseNow = time.Now()
+	go func(){
+		for t := range time.Tick(time.Second) {
+			coarseNow = t
 		}
-		if c.br.e!=nil { break }
-	}
-}
-func (c *ServerConn) WriteMessage(msg *SendMessage) error {
-	c.wrl.Lock(); defer c.wrl.Unlock()
-	return EncodeMessage(c.tw,msg)
-}
-
-func (s *Server) Handle(c net.Conn) {
-	cc := new(ServerConn)
-	cc.nc = c
-	cc.br = &timeoutReader{r:c}
-	cc.tr = textproto.NewReader(bufio.NewReader(cc.br))
-	cc.tw = textproto.NewWriter(bufio.NewWriter(c))
-	cc.Server = s
-	cc.worker()
+	}()
 }
 
