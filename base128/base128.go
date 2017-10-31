@@ -54,7 +54,7 @@ func (w *writer) Reset(wr io.Writer) {
 	w.l = 0
 	w.bits = 0
 	w.data = 0
-	w.Reset(wr)
+	w.w.Reset(wr)
 }
 func (w *writer) Write(p []byte) (n int,e error) {
 	bits := w.bits
