@@ -25,3 +25,11 @@ Further informations [here](serializer/).
 Another reflection-based (less) deterministic serialization and deserialization framework build around PreciseIO.
 
 Easier to use than Serializer.
+
+### PStruct
+
+A structure reading and writing library similar to "encoding/binary"
+
+### Base128
+
+An encoding similar to base64 but it stores 7 bit payload per byte. It uses bytes in the range 128-255.
