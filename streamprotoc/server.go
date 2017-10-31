@@ -39,6 +39,7 @@ type timeoutReader struct{
 	e error
 }
 func (r *timeoutReader) Read(p []byte) (i int,e error) {
+	if r.e!=nil { return 0,r.e }
 	r.r.SetReadDeadline(coarseNow.Add(time.Second*5))
 	i,e = r.r.Read(p)
 	if r.e==nil && e!=nil { r.e = e }
