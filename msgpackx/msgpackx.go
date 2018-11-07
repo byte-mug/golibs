@@ -31,7 +31,7 @@ func Marshal(v ...interface{}) ([]byte, error) {
 	err := NewEncoder(&buf).EncodeMulti(v...)
 	return buf.Bytes(), err
 }
-func Unmarshal(data []byte, v interface{}) error {
-	return NewDecoder(bytes.NewReader(data)).DecodeMulti(v)
+func Unmarshal(data []byte, v ...interface{}) error {
+	return NewDecoder(bytes.NewReader(data)).DecodeMulti(v...)
 }
 
