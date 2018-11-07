@@ -21,7 +21,7 @@ SOFTWARE.
 */
 
 
-package msgpack
+package msgpackx
 
 import "bytes"
 import . "github.com/vmihailenco/msgpack" 
