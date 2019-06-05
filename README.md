@@ -39,3 +39,10 @@ An encoding similar to base64 but it stores 7 bit payload per byte. It uses byte
 Algroithms related to consistent hashing and the Chord DHT algorithm/protocol.
 
 Further informations [here](chordhash/).
+
+### Skiplist
+
+A Skiplist derived from this [neat project](https://github.com/kkdai/skiplist), but using non-integer keys.
+
+Further informations [here](skiplist/).
+
