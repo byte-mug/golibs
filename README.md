@@ -33,3 +33,9 @@ A structure reading and writing library similar to "encoding/binary"
 ### Base128
 
 An encoding similar to base64 but it stores 7 bit payload per byte. It uses bytes in the range 128-255.
+
+### Chordhash
+
+Algroithms related to consistent hashing and the Chord DHT algorithm/protocol.
+
+Further informations [here](chordhash/).
