@@ -85,6 +85,8 @@ type Skiplist struct {
 	
 	// List status
 	Level int //current level of whole skiplist
+	
+	Random *rand.Rand
 }
 
 const (
@@ -97,12 +99,15 @@ func NewSkipList(comparator utils.Comparator) *Skiplist {
 	newList := &Skiplist{Header: NewHeader(1, DefaultMaxLevel), Comparator: comparator, Level: 1}
 	newList.MaxLevel = DefaultMaxLevel       //default
 	newList.Propobility = DefaultPropobility //default
+	newList.Random = rand.New(rand.NewSource(int64(time.Now().Nanosecond())))
 	return newList
 }
 
-func randomP() float32 {
-	rand.Seed(int64(time.Now().Nanosecond()))
-	return rand.Float32()
+func (b *Skiplist) randomP() float32 {
+	if b.Random == nil {
+		b.Random = rand.New(rand.NewSource(rand.Int63()))
+	}
+	return b.Random.Float32()
 }
 
 //Change SkipList default maxlevel is 4.
@@ -112,7 +117,7 @@ func (b *Skiplist) SetMaxLevel(maxLevel int) {
 
 func (b *Skiplist) RandomLevel() int {
 	level := 1
-	for randomP() < b.Propobility && level < b.MaxLevel {
+	for b.randomP() < b.Propobility && level < b.MaxLevel {
 		level++
 	}
 	return level
