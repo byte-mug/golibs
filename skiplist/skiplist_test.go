@@ -3,7 +3,7 @@ package skiplist_test
 import (
 	"testing"
 
-	. "github.com/kkdai/skiplist"
+	. "github.com/byte-mug/golibs/skiplist"
 	"github.com/emirpasic/gods/utils"
 )
 

@@ -1,6 +1,6 @@
 Skip List implement in Go
 ==================
-[![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/kkdai/skiplist/master/LICENSE)  [![GoDoc](https://godoc.org/github.com/kkdai/skiplist?status.svg)](https://godoc.org/github.com/kkdai/skiplist)  [![Build Status](https://travis-ci.org/kkdai/skiplist.svg?branch=master)](https://travis-ci.org/kkdai/skiplist)
+[![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/byte-mug/golibs/master/skiplist/LICENSE)  [![GoDoc](https://godoc.org/github.com/byte-mug/golibs/skiplist?status.svg)](https://godoc.org/github.com/byte-mug/golibs/skiplist)
 
 
 What is Skip List
@@ -14,7 +14,7 @@ What is Skip List
 
 Install
 ---------------
-`go get github.com/kkdai/skiplist`
+`go get github.com/byte-mug/golibs/skiplist`
 
 
 Usage
@@ -27,12 +27,13 @@ Usage
     import (
 	"fmt"
 	
-	. "github.com/kkdai/skiplist"
+	. "github.com/byte-mug/golibs/skiplist"
+	"github.com/emirpasic/gods/utils"
     )
 
     func main() {
         //New a skiplist
-        sl := skiplist.NewSkipList()
+        sl := skiplist.NewSkipList(utils.IntComparator)
 
         //Insert search key 50, value "5", value could be anything.
         sl.Insert(50, "5")
