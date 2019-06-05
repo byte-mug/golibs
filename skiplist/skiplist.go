@@ -169,8 +169,20 @@ func (b *Skiplist) Insert(searchKey interface{}, value interface{}) {
 		newNode := NewNode(searchKey, value, newLevel, b.MaxLevel) //New node
 		for i := 0; i <= newLevel-1; i++ {                         //zero base
 			newNode.Forward[i] = updateList[i].Forward[i]
+		}
+		
+		// XXXMFG: I need a write barrier (eg. Write-Cache-Flush) here badly!!!
+		
+		for i := 0; i <= newLevel-1; i++ {                         //zero base
 			updateList[i].Forward[i] = newNode
 		}
+		
+		// We assume, that
+		//	newNode.Forward[i] = updateList[i].Forward[i]
+		// is observable before
+		//	updateList[i].Forward[i] = newNode
+		//
+		// If not, !BANG!
 	}
 }
 
