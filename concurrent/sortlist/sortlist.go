@@ -60,8 +60,8 @@ func (n *Node) Next() *Node {
 }
 
 type Sortlist struct{
-	Cmp utils.Comparator
-	Src rand.Source
+	Cmp utils.Comparator // Required.
+	Src rand.Source // Optional.
 	
 	head Node
 	rwm sync.RWMutex
