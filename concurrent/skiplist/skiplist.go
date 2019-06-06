@@ -28,6 +28,10 @@ Skip List implement in Go.
 A Skip List is a data structure that allows fast search within an ordered
 sequence of elements. Fast search is made possible by maintaining a linked
 hierarchy of subsequences, each skipping over fewer elements.
+
+This Implementation is Partially Concurrent: It supports a single writer
+and multiple concurrent readers. Readers can access the Skiplist without
+locking.
 */
 package skiplist
 
