@@ -46,3 +46,7 @@ A Skiplist derived from this [neat project](https://github.com/kkdai/skiplist), 
 
 Further informations [here](skiplist/).
 
+### Concurrent Collections:
+
+* [Concurrent Skiplist](concurrent/skiplist/).
+
