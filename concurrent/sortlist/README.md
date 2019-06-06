@@ -1,5 +1,6 @@
 Yet another Concurrent Skiplist in Go
 ==================
+[![GoDoc](https://godoc.org/github.com/byte-mug/golibs/concurrent/sortlist?status.svg)](https://godoc.org/github.com/byte-mug/golibs/concurrent/sortlist)
 Yet another Concurrent Skiplist implementation. Changes are performed using
 atomic CAS operations. Inserts acquire a shared lock and Writes acquire an
 exclusive lock. All locking is done internally.

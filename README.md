@@ -49,4 +49,5 @@ Further informations [here](skiplist/).
 ### Concurrent Collections:
 
 * [Concurrent Skiplist](concurrent/skiplist/).
+* Yet another [Concurrent Skiplist](concurrent/sortlist/).
 
