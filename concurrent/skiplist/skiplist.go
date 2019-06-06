@@ -52,7 +52,7 @@ var (
 type Skipnode struct {
 	Key     interface{}
 	Val     interface{}
-	Forward []unsafe.Pointer
+	aForward []unsafe.Pointer
 	Level   int
 	
 	flags   uint
@@ -61,11 +61,17 @@ func (s *Skipnode) compare(c utils.Comparator,key interface{}) int {
 	if (s.flags&f_first)==0 { return c(s.Key,key) }
 	return -1
 }
+func (s *Skipnode) rawForward(i int) unsafe.Pointer {
+	return atomic.LoadPointer(&(s.aForward[i]))
+}
 func (s *Skipnode) forward(i int) *Skipnode {
-	return (*Skipnode)(atomic.LoadPointer(&(s.Forward[i])))
+	return (*Skipnode)(atomic.LoadPointer(&(s.aForward[i])))
 }
 func (s *Skipnode) setForward(i int, sn *Skipnode) {
-	atomic.StorePointer(&(s.Forward[i]),unsafe.Pointer(s))
+	atomic.StorePointer(&(s.aForward[i]),unsafe.Pointer(s))
+}
+func (s *Skipnode) forwardFrom(i int,o *Skipnode, j int) {
+	atomic.StorePointer(&(s.aForward[i]),o.rawForward(j))
 }
 
 
@@ -76,7 +82,7 @@ func NewNode(searchKey interface{}, value interface{}, createLevel int, maxLevel
 	for i := 0; i <= maxLevel-1; i++ {
 		forwardEmpty[i] = nil
 	}
-	return &Skipnode{Key: searchKey, Val: value, Forward: forwardEmpty, Level: createLevel}
+	return &Skipnode{Key: searchKey, Val: value, aForward: forwardEmpty, Level: createLevel}
 }
 func NewHeader(createLevel int, maxLevel int) *Skipnode {
 	//Every forward prepare a maxLevel empty point first.
@@ -84,7 +90,7 @@ func NewHeader(createLevel int, maxLevel int) *Skipnode {
 	for i := 0; i <= maxLevel-1; i++ {
 		forwardEmpty[i] = nil
 	}
-	return &Skipnode{Forward: forwardEmpty, Level: createLevel, flags:f_first}
+	return &Skipnode{aForward: forwardEmpty, Level: createLevel, flags:f_first}
 }
 
 type Skiplist struct {
@@ -143,7 +149,7 @@ func (b *Skiplist) Search(searchKey interface{}) (interface{}, error) {
 
 	//Start traversal forward first.
 	for i := b.Level - 1; i >= 0; i-- {
-		for currentNode.Forward[i] != nil && currentNode.forward(i).compare(b.Comparator,searchKey) < 0 {
+		for currentNode.rawForward(i) != nil && currentNode.forward(i).compare(b.Comparator,searchKey) < 0 {
 			currentNode = currentNode.forward(i)
 		}
 	}
@@ -164,7 +170,7 @@ func (b *Skiplist) Insert(searchKey interface{}, value interface{}) {
 
 	//Quick search in forward list
 	for i := b.Header.Level - 1; i >= 0; i-- {
-		for currentNode.Forward[i] != nil && currentNode.forward(i).compare(b.Comparator,searchKey) < 0 {
+		for currentNode.rawForward(i) != nil && currentNode.forward(i).compare(b.Comparator,searchKey) < 0 {
 			currentNode = currentNode.forward(i)
 		}
 		updateList[i] = currentNode
@@ -187,13 +193,13 @@ func (b *Skiplist) Insert(searchKey interface{}, value interface{}) {
 
 		newNode := NewNode(searchKey, value, newLevel, b.MaxLevel) //New node
 		for i := 0; i <= newLevel-1; i++ {                         //zero base
-			newNode.Forward[i] = updateList[i].Forward[i]
+			newNode.forwardFrom(i,updateList[i],i)
 		}
 		
 		// XXXMFG: I need a write barrier (eg. Write-Cache-Flush) here badly!!!
 		
 		for i := 0; i <= newLevel-1; i++ {                         //zero base
-			updateList[i].Forward[i] = unsafe.Pointer(newNode)
+			updateList[i].setForward(i,newNode)
 		}
 		
 		// We assume, that
@@ -212,7 +218,7 @@ func (b *Skiplist) Delete(searchKey interface{}) error {
 
 	//Quick search in forward list
 	for i := b.Header.Level - 1; i >= 0; i-- {
-		for currentNode.Forward[i] != nil && currentNode.forward(i).compare(b.Comparator,searchKey) < 0 {
+		for currentNode.rawForward(i) != nil && currentNode.forward(i).compare(b.Comparator,searchKey) < 0 {
 			currentNode = currentNode.forward(i)
 		}
 		updateList[i] = currentNode
@@ -223,13 +229,13 @@ func (b *Skiplist) Delete(searchKey interface{}) error {
 
 	if currentNode.compare(b.Comparator,searchKey) == 0 {
 		for i := 0; i <= currentNode.Level-1; i++ {
-			if updateList[i].Forward[i] != nil && updateList[i].forward(i).compare(b.Comparator,currentNode.Key) != 0 {
+			if updateList[i].rawForward(i) != nil && updateList[i].forward(i).compare(b.Comparator,currentNode.Key) != 0 {
 				break
 			}
-			updateList[i].Forward[i] = currentNode.Forward[i]
+			updateList[i].forwardFrom(i,currentNode,i)
 		}
 
-		for currentNode.Level > 1 && b.Header.Forward[currentNode.Level] == nil {
+		for currentNode.Level > 1 && b.Header.rawForward(currentNode.Level) == nil {
 			currentNode.Level--
 		}
 
@@ -252,7 +258,7 @@ func (b *Skiplist) DisplayAll() {
 		} else {
 			fmt.Printf("[HEAD]->\n\t")
 		}
-		if currentNode.Forward[0] == nil {
+		if currentNode.rawForward(0) == nil {
 			break
 		}
 		currentNode = currentNode.forward(0)
@@ -269,13 +275,13 @@ func (b *Skiplist) DisplayAll() {
 			fmt.Printf("[HEAD], level:%d ", currentNode.Level)
 		}
 
-		if currentNode.Forward[0] == nil {
+		if currentNode.rawForward(0) == nil {
 			break
 		}
 
 		for j := currentNode.Level - 1; j >= 0; j-- {
 			fmt.Printf(" fw[%d]:", j)
-			if currentNode.Forward[j] != nil {
+			if currentNode.rawForward(j) != nil {
 				fmt.Printf("%v", currentNode.forward(j).Key)
 			} else {
 				fmt.Printf("nil")
