@@ -141,13 +141,9 @@ func (s *Sortlist) Next(sk interface{}) *Node {
 }
 func (s *Sortlist) Lookup(sk interface{}) *Node {
 	n := s.Floor(sk)
-	for n!=nil {
-		ci := s.Cmp(n.Key,sk)
-		if ci > 0 { return nil }
-		if ci == 0 { return n }
-		n = (*Node)(n.get(0))
-	}
-	return nil
+	if n==nil { return nil }
+	if s.Cmp(n.Key,sk) > 0 { return nil }
+	return n
 }
 
 func (s *Sortlist) Insert(k,v interface{}) {
