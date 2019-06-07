@@ -142,10 +142,15 @@ func (s *Sortlist) Next(sk interface{}) *Node {
 func (s *Sortlist) Lookup(sk interface{}) *Node {
 	n := s.Floor(sk)
 	if n==nil { return nil }
-	if s.Cmp(n.Key,sk) > 0 { return nil }
+	if s.Cmp(n.Key,sk) != 0 { return nil }
 	return n
 }
 
+/*
+
+
+This function should really be called Put()!
+*/
 func (s *Sortlist) Insert(k,v interface{}) {
 	s.rwm.RLock()
 	defer s.rwm.RUnlock()
