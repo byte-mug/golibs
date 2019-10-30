@@ -133,8 +133,8 @@ func Sizeof(i interface{}) int {
 func BufferSizeof(i interface{},buf []byte, bo binary.ByteOrder) int {
 	return fakeRead(reflect.Indirect(reflect.ValueOf(i)),buf,bo)
 }
-func ReadSize(i interface{},buf []byte, bo binary.ByteOrder) {
-	read(reflect.Indirect(reflect.ValueOf(i)),buf,bo)
+func ReadSize(i interface{},buf []byte, bo binary.ByteOrder) int {
+	return read(reflect.Indirect(reflect.ValueOf(i)),buf,bo)
 }
 func Read(i interface{},buf []byte, bo binary.ByteOrder) {
 	read(reflect.Indirect(reflect.ValueOf(i)),buf,bo)
