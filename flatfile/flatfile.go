@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2017 Simon Schmidt
+Copyright (c) 2017-2019 Simon Schmidt
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -199,7 +199,7 @@ func (r *FlatFileReader) InitEx(src io.ReaderAt,maxCache int) {
 }
 func (r *FlatFileReader) lookupCache(recordID int) (int,int64,bool) {
 	last,loff,lok := r.pc.Last()
-	if !lok || last>recordID { return last,loff,true }
+	if !lok || last<recordID { return last,loff,true }
 	if last==recordID { return last,loff,false }
 	fid,foff := r.pc.Search(recordID)
 	return fid,foff,false
