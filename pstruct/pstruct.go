@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2017 Simon Schmidt
+Copyright (c) 2017-2019 Simon Schmidt
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -68,7 +68,6 @@ func read(v reflect.Value,buf []byte, bo binary.ByteOrder) (size int) {
 	return
 }
 func write(v reflect.Value,buf []byte, bo binary.ByteOrder) (size int) {
-	if !v.CanSet() { return sizeof(v) } // Fake-Read
 	switch v.Kind() {
 	case reflect.Bool:
 		if v.Bool() { buf[0]=0xff } else { buf[0]=0 }
