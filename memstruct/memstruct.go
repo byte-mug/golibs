@@ -47,7 +47,7 @@ import "reflect"
 /*
 Supported types:
 
-	*struct
+	struct // instance.Value() returns *struct
 	*int8
 	*int16
 	*int32
