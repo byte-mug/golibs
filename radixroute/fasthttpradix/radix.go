@@ -36,7 +36,8 @@ func NormPath(str string) string {
 }
 
 func InvalidPath(ctx *fasthttp.RequestCtx) {
-	ctx.Error("404 Not Found",404)
+	ctx.SetBody([]byte("404 Not Found\n"))
+	ctx.SetStatusCode(fasthttp.StatusNotFound)
 }
 
 type handling struct{
