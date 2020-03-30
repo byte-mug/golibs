@@ -561,6 +561,7 @@ func (t *Tree) GetParlist(s []byte, par []Parameter) (rv interface{}, rpar []Par
 	var lpar *paramList
 	rv,lpar,rok = t.get(s,lpar)
 	rpar = lpar.toParameter(par)
+	lpar.unref()
 	return
 }
 
@@ -569,6 +570,7 @@ func (t *Tree) Get(s []byte, ps ParameterSetter) (rv interface{}, rok bool) {
 	var lpar *paramList
 	rv,lpar,rok = t.get(s,lpar)
 	if ps!=nil { lpar.toParameterSetter(ps) }
+	lpar.unref()
 	return
 }
 
