@@ -18,33 +18,37 @@ Extended IO Routines to construct Serializers/Deserializers to directly operate 
 
 A reflection-based deterministic serialization and deserialization framework build around PreciseIO.
 
-Further informations [here](serializer/).
+Further informations [here](serializer/). [GoDoc](https://byte-mug.github.io/pkg/github.com/byte-mug/golibs/serializer/)
 
 ### QuickDump
 
 Another reflection-based (less) deterministic serialization and deserialization framework build around PreciseIO.
 
-Easier to use than Serializer.
+Easier to use than Serializer. [GoDoc](https://byte-mug.github.io/pkg/github.com/byte-mug/golibs/quickdump/)
 
 ### PStruct
 
 A structure reading and writing library similar to "encoding/binary"
 
+[GoDoc](https://byte-mug.github.io/pkg/github.com/byte-mug/golibs/pstruct/)
+
 ### Base128
 
 An encoding similar to base64 but it stores 7 bit payload per byte. It uses bytes in the range 128-255.
+
+[GoDoc](https://byte-mug.github.io/pkg/github.com/byte-mug/golibs/base128/)
 
 ### Chordhash
 
 Algroithms related to consistent hashing and the Chord DHT algorithm/protocol.
 
-Further informations [here](chordhash/).
+Further informations [here](chordhash/). [GoDoc](https://byte-mug.github.io/pkg/github.com/byte-mug/golibs/chordhash/)
 
 ### Skiplist
 
 A Skiplist derived from this [neat project](https://github.com/kkdai/skiplist), but using non-integer keys.
 
-Further informations [here](skiplist/).
+Further informations [here](skiplist/). [GoDoc](https://byte-mug.github.io/pkg/github.com/byte-mug/golibs/skiplist/)
 
 ### Concurrent Collections:
 
