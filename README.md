@@ -1,7 +1,7 @@
 # golibs
 This Go Library contains a larger set of useful Go packages for different purposes.
 
-[![GoDoc](https://godoc.org/github.com/byte-mug/golibs?status.svg)](https://godoc.org/github.com/byte-mug/golibs)
+[![GoDoc](https://byte-mug.github.io/pkg/godoc-status.svg)](https://byte-mug.github.io/pkg/github.com/byte-mug/golibs)
 
 ## Packages
 
